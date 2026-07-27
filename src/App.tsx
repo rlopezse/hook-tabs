@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import s from "./App.module.css";
 
 function App() {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
@@ -73,29 +74,39 @@ function App() {
     window.close();
   };
 
+  const getDomain = (url?: string) => {
+  if (!url) return "";
+
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <>
+      <div className={s.search}>
       <input
         ref={inputRef}
-        placeholder=""
+        placeholder="Buscar pestaña..."
         onChange={(e) => filterTabs(e.target.value)}
         onKeyDown={handleKeyDown}
       />
+      </div>
 
-      <ul>
+      <ul className={s.tab_list}>
         {filteredTabs.map((tab, index) => (
             <li
               key={tab.id}
               onClick={() => openTab(tab)}
-              style={{
-                background: index === selectedIndex ? "#ddd" : "transparent",
-                cursor: "pointer",
-                padding: "6px",
-              }}
+              className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ""}`}
             >
-            <img src={tab.favIconUrl} width={16} height={16} />
-              {tab.title}
-              {tab.title}
+              <img src={tab.favIconUrl} width={16} height={16} />
+              <span>
+                <p className={s.tab_list_title}>{tab.title}</p>
+                <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
+              </span>
             </li>
           ))}
       </ul>
