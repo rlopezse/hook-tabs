@@ -25,6 +25,22 @@ function App() {
     setSelectedIndex(0);
   };
 
+  useEffect(() => {
+    const handleBlur = () => {
+      setTimeout(() => {
+        if (!document.hasFocus()) {
+          window.close();
+        }
+      }, 100);
+    };
+
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
       case "ArrowDown":
