@@ -18,7 +18,7 @@ function App() {
 
   const filterTabs = (search: string) => {
     const filteredTabs = tabs.filter((tab) =>
-      tab.title?.toLowerCase().includes(search.toLowerCase())
+      tab.url?.toLowerCase().includes(search.toLowerCase())
     );
 
     setfilteredTabs(filteredTabs);
