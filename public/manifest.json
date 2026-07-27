@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Hook Tabs",
+  "version": "0.0.1",
+
+  "permissions": [
+    "tabs",
+    "windows"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "commands": {
+    "open-hook-tabs": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H"
+      },
+      "description": "Open Hook Tabs"
+    }
+  }
+}
