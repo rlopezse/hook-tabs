@@ -22,25 +22,10 @@ html {
 body {
   background-color: #f9f9f9;
   min-height: 100vh;
-  font-family:
-    'Montserrat',
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Helvetica Neue',
-    Arial,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji';
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* system-ui llama directamente a la tipografía que usa Chrome en ese OS */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px; /* Tamaño promedio de los textos en la barra de herramientas de Chrome */
+  -webkit-font-smoothing: antialiased; /* Suavizado de fuente idéntico al navegador */
 }
 
 #root {

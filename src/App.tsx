@@ -6,9 +6,11 @@ function App() {
   const [filteredTabs, setfilteredTabs] = useState<chrome.tabs.Tab[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
     chrome.tabs.query({}, (tabs) => {
+
       setTabs(tabs);
       setfilteredTabs(tabs);
     });
@@ -17,8 +19,10 @@ function App() {
   }, []);
 
   const filterTabs = (search: string) => {
-    const filteredTabs = tabs.filter((tab) =>
-      tab.url?.toLowerCase().includes(search.toLowerCase())
+    const filteredTabs = tabs.filter((tab) => {
+      if(tab.title?.toLowerCase().includes("hook tabs")) return false;
+      return tab.url?.toLowerCase().includes(search.toLowerCase())
+      }
     );
 
     setfilteredTabs(filteredTabs);
@@ -40,6 +44,13 @@ function App() {
       window.removeEventListener("blur", handleBlur);
     };
   }, []);
+
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+    });
+  }, [selectedIndex]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
@@ -116,6 +127,7 @@ function App() {
             <li
               key={tab.id}
               onClick={() => openTab(tab)}
+              ref={index === selectedIndex ? selectedRef : null}
               className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ""}`}
             >
               <img src={tab.favIconUrl} width={16} height={16} />
