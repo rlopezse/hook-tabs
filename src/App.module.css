@@ -1,6 +1,5 @@
 .tab_list {
   padding: 16px;
-  padding-bottom: 80px; 
 }
 
 .tab_list_item {
@@ -20,8 +19,12 @@
   border-bottom: none;
 }
 
+.tab_list_item:first-child {
+  margin-top: 64px;
+}
+
 .tab_list_title  {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--gray-900);
 }
 
@@ -32,10 +35,10 @@
 
 .search {
   position: fixed;
-  bottom: 0;
+  top: 0;
   z-index: 1;
   width: 100%;
-  box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--gray-200);
   padding: 16px;
   background-color: var(--white);
 }
@@ -47,3 +50,8 @@
   border-radius: 4px;
 }
 
+.search input:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 2px var(--blue-100);
+}
