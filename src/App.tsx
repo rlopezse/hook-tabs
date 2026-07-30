@@ -10,20 +10,30 @@ function App() {
 
   useEffect(() => {
     chrome.tabs.query({}, (tabs) => {
+      const validTabs = tabs.filter(
+      tab => !tab.url?.startsWith(chrome.runtime.getURL(""))
+    );
 
-      setTabs(tabs);
-      setfilteredTabs(tabs);
+    setTabs(validTabs);
+    setfilteredTabs(validTabs);
     });
 
     inputRef.current?.focus();
   }, []);
 
   const filterTabs = (search: string) => {
+    const searchLower = search.toLowerCase();
+
     const filteredTabs = tabs.filter((tab) => {
-      if(tab.title?.toLowerCase().includes("hook tabs")) return false;
-      return tab.url?.toLowerCase().includes(search.toLowerCase())
+      if (tab.url?.startsWith(chrome.runtime.getURL(""))) {
+        return false;
       }
-    );
+
+      return (
+        tab.title?.toLowerCase().includes(searchLower) ||
+        tab.url?.toLowerCase().includes(searchLower)
+      );
+    });
 
     setfilteredTabs(filteredTabs);
     setSelectedIndex(0);
