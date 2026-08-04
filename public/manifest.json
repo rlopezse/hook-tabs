@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Hook Tabs",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "description": "Open all tabs in the current window",
 
   "permissions": [
     "tabs",
@@ -10,6 +11,10 @@
 
   "background": {
     "service_worker": "background.js"
+  },
+
+  "icons": {
+    "128": "images/icon-128.png"
   },
 
   "commands": {
