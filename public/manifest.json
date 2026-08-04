@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Hook Tabs",
   "version": "0.0.2",
-  "description": "Open all tabs in the current window",
+  "description": "Hook Tabs helps you navigate your browser faster. Search across all your open tabs.",
 
   "permissions": [
     "tabs",
