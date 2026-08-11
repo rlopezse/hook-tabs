@@ -1,0 +1,10 @@
+node_modules
+dist
+.nuxt
+.output
+public
+*.min.js
+*.min.css
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
