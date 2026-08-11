@@ -39,7 +39,7 @@ function App() {
     setSelectedIndex(0)
   }
 
-  /*useEffect(() => {
+  useEffect(() => {
     const handleBlur = () => {
       setTimeout(() => {
         if (!document.hasFocus()) {
@@ -53,7 +53,7 @@ function App() {
     return () => {
       window.removeEventListener("blur", handleBlur);
     };
-  }, []);*/
+  }, []);
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({
@@ -141,12 +141,10 @@ function App() {
       pinned: !tab.pinned,
     })
 
-    // Actualiza tabs
     setTabs((prevTabs) =>
       prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned: !t.pinned } : t)),
     )
 
-    // Actualiza filteredTabs también
     setfilteredTabs((prevTabs) =>
       prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned: !t.pinned } : t)),
     )
