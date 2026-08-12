@@ -12,6 +12,10 @@
   width: 18px;
 }
 
+.tab_list_text {
+  width: calc(100% - 54px);
+}
+
 .tab_list_item_selected {
   background-color: var(--gray-200);
 }
