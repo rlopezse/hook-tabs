@@ -17,8 +17,8 @@ chrome.commands.onCommand.addListener(async (command) => {
 
   const currentWindow = await chrome.windows.getLastFocused();
 
-  const width = 400;
-  const height = 500;
+  const width = 500;
+  const height = 300;
 
   const left = Math.round(
     (currentWindow.left ?? 0) +
