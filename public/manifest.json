@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hook Tabs",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Search. Find. Close. Pin. Done.",
 
   "permissions": [

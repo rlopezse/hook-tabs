@@ -188,20 +188,32 @@ function App() {
     setSelectedIndex((current) => Math.max(current - 1, 0))
   }
 
+  const reorderByPinned = (tabs: chrome.tabs.Tab[]) =>
+    [...tabs].sort((a, b) => Number(b.pinned) - Number(a.pinned))
+
   const togglePinTab = (tab: chrome.tabs.Tab) => {
     if (!tab.id) return
 
+    const pinned = !tab.pinned
+
     chrome.tabs.update(tab.id, {
-      pinned: !tab.pinned,
+      pinned,
     })
 
-    setTabs((prevTabs) =>
-      prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned: !t.pinned } : t)),
-    )
+    const applyPin = (prevTabs: chrome.tabs.Tab[]) =>
+      reorderByPinned(
+        prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned } : t)),
+      )
 
-    setfilteredTabs((prevTabs) =>
-      prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned: !t.pinned } : t)),
-    )
+    setTabs(applyPin)
+
+    setfilteredTabs((prevTabs) => {
+      const updated = applyPin(prevTabs)
+
+      setSelectedIndex(updated.findIndex((t) => t.id === tab.id))
+
+      return updated
+    })
   }
 
   const getDomain = (url?: string) => {
