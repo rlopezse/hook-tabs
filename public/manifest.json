@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Hook Tabs",
   "version": "0.7.0",
-  "description": "Hook Tabs helps you navigate your browser faster. Search across all your open tabs.",
+  "description": "Search. Find. Close. Pin. Done.",
 
   "permissions": [
     "tabs",
