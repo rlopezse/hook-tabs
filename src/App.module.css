@@ -3,9 +3,18 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-100);
   overflow: hidden;
   scroll-margin-top: 55px;
+}
+
+.tab_list_pinned {
+  border: 1px solid oklch(0.94 0.03 254.53);
+  border-radius: 6px;
+  padding: 3px 4px;
+  font-size: 12px;
+  color: var(--blue-700);
+  background: var(--blue-50);
 }
 
 .tab_list_item img {
@@ -18,7 +27,7 @@
 }
 
 .tab_list_item_selected {
-  background-color: var(--gray-200);
+  background-color: var(--gray-50);
 }
 
 .tab_list_item:last-child {
@@ -33,6 +42,8 @@
   padding: 12px 16px;
   text-align: center;
   margin-top: 70px;
+  color: var(--gray-400);
+  font-size: 16px;
 }
 
 .tab_list_title {
@@ -42,7 +53,7 @@
 
 .tab_list_subtitle {
   font-size: 12px;
-  color: var(--gray-600);
+  color: var(--gray-400);
 }
 
 .search {
@@ -53,22 +64,33 @@
   top: 0;
 }
 
+.search span {
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  padding: 3px 4px;
+  font-size: 12px;
+  color: var(--gray-400);
+  top: calc(50% - 11px);
+  background: var(--gray-50);
+}
+
 .search input {
   width: 100%;
   height: 54px;
-  padding: 0 16px;
   font-size: 14px;
   font-weight: 400;
-  padding-left: 46px;
+  padding: 0 58px 0 46px;
+  border-bottom: 1px solid var(--gray-100);
 }
 
 .search input:focus {
   outline: none;
-  border-color: var(--blue-500);
-  box-shadow: 0 0 0 2px var(--blue-100);
 }
 
 .search input::placeholder {
-  color: var(--gray-600);
+  color: var(--gray-400);
   font-size: 14px;
 }
