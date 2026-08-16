@@ -20,7 +20,6 @@ html {
 }
 
 body {
-  background-color: #f9f9f9;
   min-height: 100vh;
   /* system-ui llama directamente a la tipografía que usa Chrome en ese OS */
   font-family:
