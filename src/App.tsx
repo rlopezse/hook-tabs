@@ -244,11 +244,18 @@ function App() {
           }}
           viewBox="0 0 20 20"
         >
-        <path d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9418 2.9419 7.7115 0 10.6533z" stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path
+            d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9418 2.9419 7.7115 0 10.6533z"
+            stroke="currentColor"
+            fill="none"
+            fill-rule="evenodd"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
         </svg>
         <input
           ref={inputRef}
-          placeholder="Buscar pestaña"
+          placeholder="Search tab"
           onChange={(e) => filterTabs(e.target.value)}
           onKeyDown={handleKeyDown}
         />
@@ -258,7 +265,7 @@ function App() {
       <ul className={s.tab_list}>
         {filteredTabs.length === 0 && closedTabs.length === 0 ? (
           <li className={s.tab_list_notfound}>
-            <span>No se encontraron pestañas con ese nombre</span>
+            <span>No tabs found with that name</span>
           </li>
         ) : isShowingClosedTabs ? (
           closedTabs.map((session, index) => (
@@ -291,13 +298,27 @@ function App() {
                 <p className={s.tab_list_title}>{tab.title}</p>
                 <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
               </span>
-              {tab.pinned && (
-                <span className={s.tab_list_pinned}>pin</span>
-              )}
+              {tab.pinned && <span className={s.tab_list_pinned}>pin</span>}
             </li>
           ))
         )}
       </ul>
+      <div className={s.search_instructions}>
+        <div className={s.search_instructions_icons}>
+          <p className={s.search_instructions_icon}>
+            <span>↑ ↓ navigate</span>{' '}
+          </p>
+          <p className={s.search_instructions_icon}>
+            <span>← close</span>
+          </p>
+          <p className={s.search_instructions_icon}>
+            <span>→ pin</span>
+          </p>
+          <p className={s.search_instructions_icon}>
+            <span>↵ open</span>
+          </p>
+        </div>
+      </div>
     </>
   )
 }
