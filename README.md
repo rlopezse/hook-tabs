@@ -1,6 +1,6 @@
 # Hook Tabs
 
-![Hook Tabs screenshot](./docs/screenshot.png?v=1)
+![Hook Tabs screenshot](./docs/screenshot1.png)
 
 Hook Tabs es un proyecto personal que creé porque me cansé de tener que recorrer pestaña por pestaña para encontrar una en particular, o depender del mouse para hacerlo.
 
