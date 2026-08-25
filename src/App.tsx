@@ -7,6 +7,7 @@ function App() {
   const [closedTabs, setClosedTabs] = useState<chrome.sessions.Session[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [isMoveMode, setIsMoveMode] = useState(false)
   const selectedRef = useRef<HTMLLIElement>(null)
   const isShowingClosedTabs = filteredTabs.length === 0 && closedTabs.length > 0
 
@@ -43,6 +44,7 @@ function App() {
 
     setfilteredTabs(filteredTabs)
     setSelectedIndex(0)
+    setIsMoveMode(false)
 
     if (filteredTabs.length === 0 && searchLower) {
       chrome.sessions.getRecentlyClosed({ maxResults: 25 }, (sessions) => {
@@ -100,7 +102,9 @@ function App() {
       case 'ArrowDown':
         e.preventDefault()
 
-        if (activeLength > 0) {
+        if (isMoveMode && !isShowingClosedTabs) {
+          moveTab('down')
+        } else if (activeLength > 0) {
           setSelectedIndex((current) => (current + 1) % activeLength)
         }
 
@@ -109,10 +113,24 @@ function App() {
       case 'ArrowUp':
         e.preventDefault()
 
-        if (activeLength > 0) {
+        if (isMoveMode && !isShowingClosedTabs) {
+          moveTab('up')
+        } else if (activeLength > 0) {
           setSelectedIndex(
             (current) => (current - 1 + activeLength) % activeLength,
           )
+        }
+
+        break
+
+      case 'm':
+      case 'M':
+        if (e.ctrlKey && !isShowingClosedTabs) {
+          e.preventDefault()
+
+          if (filteredTabs[selectedIndex]) {
+            setIsMoveMode((current) => !current)
+          }
         }
 
         break
@@ -157,7 +175,12 @@ function App() {
         break
 
       case 'Escape':
-        window.close()
+        if (isMoveMode) {
+          e.preventDefault()
+          setIsMoveMode(false)
+        } else {
+          window.close()
+        }
         break
     }
   }
@@ -186,10 +209,66 @@ function App() {
     setfilteredTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
 
     setSelectedIndex((current) => Math.max(current - 1, 0))
+    setIsMoveMode(false)
   }
 
   const reorderByPinned = (tabs: chrome.tabs.Tab[]) =>
     [...tabs].sort((a, b) => Number(b.pinned) - Number(a.pinned))
+
+  const moveTab = (direction: 'up' | 'down') => {
+    const currentIndex = selectedIndex
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+    if (targetIndex < 0 || targetIndex >= filteredTabs.length) return
+
+    const currentTab = filteredTabs[currentIndex]
+    const targetTab = filteredTabs[targetIndex]
+
+    if (!currentTab.id || !targetTab.id) return
+    if (currentTab.windowId !== targetTab.windowId) return
+
+    let newPinned = currentTab.pinned
+
+    if (direction === 'up' && !currentTab.pinned && targetTab.pinned) {
+      newPinned = true
+    } else if (direction === 'down' && currentTab.pinned && !targetTab.pinned) {
+      newPinned = false
+    }
+
+    if (newPinned !== currentTab.pinned) {
+      chrome.tabs.update(currentTab.id, { pinned: newPinned })
+    }
+
+    chrome.tabs.move(currentTab.id, { index: targetTab.index })
+
+    const applyMove = (prevTabs: chrome.tabs.Tab[]) => {
+      const curPos = prevTabs.findIndex((t) => t.id === currentTab.id)
+      const tgtPos = prevTabs.findIndex((t) => t.id === targetTab.id)
+
+      if (curPos === -1 || tgtPos === -1) return prevTabs
+
+      const updated = [...prevTabs]
+
+      updated[curPos] = { ...prevTabs[tgtPos], index: prevTabs[curPos].index }
+      updated[tgtPos] = {
+        ...prevTabs[curPos],
+        pinned: newPinned,
+        index: prevTabs[tgtPos].index,
+      }
+
+      return updated
+    }
+
+    setTabs(applyMove)
+
+    setfilteredTabs((prevTabs) => {
+      const updated = applyMove(prevTabs)
+
+      setSelectedIndex(updated.findIndex((t) => t.id === currentTab.id))
+
+      return updated
+    })
+  }
 
   const togglePinTab = (tab: chrome.tabs.Tab) => {
     if (!tab.id) return
@@ -291,7 +370,7 @@ function App() {
               key={tab.id}
               onClick={() => openTab(tab)}
               ref={index === selectedIndex ? selectedRef : null}
-              className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''}`}
+              className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''} ${index === selectedIndex && isMoveMode ? s.tab_list_item_moving : ''}`}
             >
               <img src={tab.favIconUrl} width={16} height={16} />
               <span className={s.tab_list_text}>
@@ -313,6 +392,9 @@ function App() {
           </p>
           <p className={s.search_instructions_icon}>
             <span>→ pin</span>
+          </p>
+          <p className={s.search_instructions_icon}>
+            <span>⌃v {isMoveMode ? 'stop moving' : 'move'}</span>
           </p>
           <p className={s.search_instructions_icon}>
             <span>↵ open</span>
