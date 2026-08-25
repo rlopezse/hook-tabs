@@ -32,6 +32,11 @@
   background-color: var(--gray-50);
 }
 
+.tab_list_item_moving {
+  background-color: var(--blue-50);
+  box-shadow: inset 3px 0 0 var(--blue-700);
+}
+
 .tab_list_item:last-child {
   border-bottom: none;
 }
