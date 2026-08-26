@@ -1,15 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 import s from './App.module.css'
 
+const flattenBookmarks = (
+  nodes: chrome.bookmarks.BookmarkTreeNode[],
+): chrome.bookmarks.BookmarkTreeNode[] =>
+  nodes.flatMap((node) => [
+    ...(node.url ? [node] : []),
+    ...(node.children ? flattenBookmarks(node.children) : []),
+  ])
+
 function App() {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([])
   const [filteredTabs, setfilteredTabs] = useState<chrome.tabs.Tab[]>([])
   const [closedTabs, setClosedTabs] = useState<chrome.sessions.Session[]>([])
+  const [bookmarks, setBookmarks] = useState<
+    chrome.bookmarks.BookmarkTreeNode[]
+  >([])
+  const [filteredBookmarks, setFilteredBookmarks] = useState<
+    chrome.bookmarks.BookmarkTreeNode[]
+  >([])
   const inputRef = useRef<HTMLInputElement>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isMoveMode, setIsMoveMode] = useState(false)
   const selectedRef = useRef<HTMLLIElement>(null)
-  const isShowingClosedTabs = filteredTabs.length === 0 && closedTabs.length > 0
+  const bookmarkedUrls = new Set(bookmarks.map((bookmark) => bookmark.url))
+  const isShowingClosedTabs =
+    filteredTabs.length === 0 &&
+    filteredBookmarks.length === 0 &&
+    closedTabs.length > 0
+  const isTabSelected =
+    !isShowingClosedTabs && selectedIndex < filteredTabs.length
 
   useEffect(() => {
     chrome.tabs.query({}, (tabs) => {
@@ -25,8 +45,14 @@ function App() {
       setSelectedIndex(activeIndex === -1 ? 0 : activeIndex)
     })
 
+    chrome.bookmarks.getTree((nodes) => {
+      setBookmarks(flattenBookmarks(nodes))
+    })
+
     inputRef.current?.focus()
   }, [])
+
+  const isBookmarked = (url?: string) => !!url && bookmarkedUrls.has(url)
 
   const filterTabs = (search: string) => {
     const searchLower = search.toLowerCase()
@@ -42,11 +68,27 @@ function App() {
       )
     })
 
+    const openTabUrls = new Set(tabs.map((tab) => tab.url))
+
+    const matchingBookmarks = searchLower
+      ? bookmarks.filter(
+          (bookmark) =>
+            !openTabUrls.has(bookmark.url) &&
+            (bookmark.title?.toLowerCase().includes(searchLower) ||
+              bookmark.url?.toLowerCase().includes(searchLower)),
+        )
+      : []
+
     setfilteredTabs(filteredTabs)
+    setFilteredBookmarks(matchingBookmarks)
     setSelectedIndex(0)
     setIsMoveMode(false)
 
-    if (filteredTabs.length === 0 && searchLower) {
+    if (
+      filteredTabs.length === 0 &&
+      matchingBookmarks.length === 0 &&
+      searchLower
+    ) {
       chrome.sessions.getRecentlyClosed({ maxResults: 25 }, (sessions) => {
         const closedTabs = sessions.filter(
           (session) =>
@@ -66,6 +108,14 @@ function App() {
     if (!session.tab?.sessionId) return
 
     chrome.sessions.restore(session.tab.sessionId)
+
+    window.close()
+  }
+
+  const openBookmark = (bookmark: chrome.bookmarks.BookmarkTreeNode) => {
+    if (!bookmark.url) return
+
+    chrome.tabs.create({ url: bookmark.url })
 
     window.close()
   }
@@ -94,15 +144,16 @@ function App() {
   }, [selectedIndex])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const combinedLength = filteredTabs.length + filteredBookmarks.length
     const activeLength = isShowingClosedTabs
       ? closedTabs.length
-      : filteredTabs.length
+      : combinedLength
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
 
-        if (isMoveMode && !isShowingClosedTabs) {
+        if (isMoveMode && isTabSelected) {
           moveTab('down')
         } else if (activeLength > 0) {
           setSelectedIndex((current) => (current + 1) % activeLength)
@@ -113,7 +164,7 @@ function App() {
       case 'ArrowUp':
         e.preventDefault()
 
-        if (isMoveMode && !isShowingClosedTabs) {
+        if (isMoveMode && isTabSelected) {
           moveTab('up')
         } else if (activeLength > 0) {
           setSelectedIndex(
@@ -125,7 +176,7 @@ function App() {
 
       case 'm':
       case 'M':
-        if (e.ctrlKey && !isShowingClosedTabs) {
+        if (e.ctrlKey && isTabSelected) {
           e.preventDefault()
 
           if (filteredTabs[selectedIndex]) {
@@ -142,8 +193,17 @@ function App() {
           if (closedTabs[selectedIndex]) {
             restoreTab(closedTabs[selectedIndex])
           }
-        } else if (filteredTabs[selectedIndex]) {
-          openTab(filteredTabs[selectedIndex])
+        } else if (isTabSelected) {
+          if (filteredTabs[selectedIndex]) {
+            openTab(filteredTabs[selectedIndex])
+          }
+        } else {
+          const bookmark =
+            filteredBookmarks[selectedIndex - filteredTabs.length]
+
+          if (bookmark) {
+            openBookmark(bookmark)
+          }
         }
 
         break
@@ -151,7 +211,7 @@ function App() {
       case 'ArrowLeft':
       case '<':
         e.preventDefault()
-        if (filteredTabs[selectedIndex]) {
+        if (isTabSelected && filteredTabs[selectedIndex]) {
           closeTab(filteredTabs[selectedIndex])
         }
         break
@@ -160,7 +220,7 @@ function App() {
       case 'W':
         if (e.metaKey || e.ctrlKey) {
           e.preventDefault()
-          if (filteredTabs[selectedIndex]) {
+          if (isTabSelected && filteredTabs[selectedIndex]) {
             closeTab(filteredTabs[selectedIndex])
           }
         }
@@ -169,7 +229,7 @@ function App() {
       case 'ArrowRight':
       case '>':
         e.preventDefault()
-        if (filteredTabs[selectedIndex]) {
+        if (isTabSelected && filteredTabs[selectedIndex]) {
           togglePinTab(filteredTabs[selectedIndex])
         }
         break
@@ -342,7 +402,9 @@ function App() {
       </div>
 
       <ul className={s.tab_list}>
-        {filteredTabs.length === 0 && closedTabs.length === 0 ? (
+        {filteredTabs.length === 0 &&
+        filteredBookmarks.length === 0 &&
+        closedTabs.length === 0 ? (
           <li className={s.tab_list_notfound}>
             <span>No tabs found with that name</span>
           </li>
@@ -365,21 +427,50 @@ function App() {
             </li>
           ))
         ) : (
-          filteredTabs.map((tab, index) => (
-            <li
-              key={tab.id}
-              onClick={() => openTab(tab)}
-              ref={index === selectedIndex ? selectedRef : null}
-              className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''} ${index === selectedIndex && isMoveMode ? s.tab_list_item_moving : ''}`}
-            >
-              <img src={tab.favIconUrl} width={16} height={16} />
-              <span className={s.tab_list_text}>
-                <p className={s.tab_list_title}>{tab.title}</p>
-                <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
-              </span>
-              {tab.pinned && <span className={s.tab_list_pinned}>pin</span>}
-            </li>
-          ))
+          <>
+            {filteredTabs.map((tab, index) => (
+              <li
+                key={tab.id}
+                onClick={() => openTab(tab)}
+                ref={index === selectedIndex ? selectedRef : null}
+                className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''} ${index === selectedIndex && isMoveMode ? s.tab_list_item_moving : ''}`}
+              >
+                <img src={tab.favIconUrl} width={16} height={16} />
+                <span className={s.tab_list_text}>
+                  <p className={s.tab_list_title}>{tab.title}</p>
+                  <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
+                </span>
+                {isBookmarked(tab.url) && (
+                  <span className={s.tab_list_bookmark_mark} title="Bookmarked">
+                    ★
+                  </span>
+                )}
+                {tab.pinned && <span className={s.tab_list_pinned}>pin</span>}
+              </li>
+            ))}
+            {filteredBookmarks.map((bookmark, bookmarkIndex) => {
+              const index = filteredTabs.length + bookmarkIndex
+
+              return (
+                <li
+                  key={bookmark.id}
+                  onClick={() => openBookmark(bookmark)}
+                  ref={index === selectedIndex ? selectedRef : null}
+                  className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''}`}
+                >
+                  <span className={s.tab_list_bookmark_icon}>★</span>
+                  <span className={s.tab_list_text}>
+                    <p className={s.tab_list_title}>
+                      {bookmark.title || bookmark.url}
+                    </p>
+                    <p className={s.tab_list_subtitle}>
+                      {getDomain(bookmark.url)} · Marked
+                    </p>
+                  </span>
+                </li>
+              )
+            })}
+          </>
         )}
       </ul>
       <div className={s.search_instructions}>
