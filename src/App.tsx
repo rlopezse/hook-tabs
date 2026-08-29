@@ -11,7 +11,7 @@ const flattenBookmarks = (
 
 function App() {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([])
-  const [filteredTabs, setfilteredTabs] = useState<chrome.tabs.Tab[]>([])
+  const [filteredTabs, setFilteredTabs] = useState<chrome.tabs.Tab[]>([])
   const [closedTabs, setClosedTabs] = useState<chrome.sessions.Session[]>([])
   const [bookmarks, setBookmarks] = useState<
     chrome.bookmarks.BookmarkTreeNode[]
@@ -19,26 +19,38 @@ function App() {
   const [filteredBookmarks, setFilteredBookmarks] = useState<
     chrome.bookmarks.BookmarkTreeNode[]
   >([])
+
   const inputRef = useRef<HTMLInputElement>(null)
+  const selectedRef = useRef<HTMLLIElement>(null)
+
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isMoveMode, setIsMoveMode] = useState(false)
-  const selectedRef = useRef<HTMLLIElement>(null)
+
+  const windowIdParam = new URLSearchParams(window.location.search).get(
+    'windowId',
+  )
+  const sourceWindowId = windowIdParam ? Number(windowIdParam) : NaN
+
   const bookmarkedUrls = new Set(bookmarks.map((bookmark) => bookmark.url))
+
   const isShowingClosedTabs =
     filteredTabs.length === 0 &&
     filteredBookmarks.length === 0 &&
     closedTabs.length > 0
+
   const isTabSelected =
     !isShowingClosedTabs && selectedIndex < filteredTabs.length
 
   useEffect(() => {
-    chrome.tabs.query({}, (tabs) => {
-      const validTabs = tabs.filter(
+    if (!Number.isInteger(sourceWindowId)) return
+
+    chrome.tabs.query({ windowId: sourceWindowId }, (queriedTabs) => {
+      const validTabs = queriedTabs.filter(
         (tab) => !tab.url?.startsWith(chrome.runtime.getURL('')),
       )
 
       setTabs(validTabs)
-      setfilteredTabs(validTabs)
+      setFilteredTabs(validTabs)
 
       const activeIndex = validTabs.findIndex((tab) => tab.active)
 
@@ -50,14 +62,14 @@ function App() {
     })
 
     inputRef.current?.focus()
-  }, [])
+  }, [sourceWindowId])
 
   const isBookmarked = (url?: string) => !!url && bookmarkedUrls.has(url)
 
   const filterTabs = (search: string) => {
     const searchLower = search.toLowerCase()
 
-    const filteredTabs = tabs.filter((tab) => {
+    const matchingTabs = tabs.filter((tab) => {
       if (tab.url?.startsWith(chrome.runtime.getURL(''))) {
         return false
       }
@@ -79,25 +91,25 @@ function App() {
         )
       : []
 
-    setfilteredTabs(filteredTabs)
+    setFilteredTabs(matchingTabs)
     setFilteredBookmarks(matchingBookmarks)
     setSelectedIndex(0)
     setIsMoveMode(false)
 
     if (
-      filteredTabs.length === 0 &&
+      matchingTabs.length === 0 &&
       matchingBookmarks.length === 0 &&
       searchLower
     ) {
       chrome.sessions.getRecentlyClosed({ maxResults: 25 }, (sessions) => {
-        const closedTabs = sessions.filter(
+        const matchingClosedTabs = sessions.filter(
           (session) =>
             session.tab &&
             (session.tab.title?.toLowerCase().includes(searchLower) ||
               session.tab.url?.toLowerCase().includes(searchLower)),
         )
 
-        setClosedTabs(closedTabs)
+        setClosedTabs(matchingClosedTabs)
       })
     } else {
       setClosedTabs([])
@@ -115,7 +127,10 @@ function App() {
   const openBookmark = (bookmark: chrome.bookmarks.BookmarkTreeNode) => {
     if (!bookmark.url) return
 
-    chrome.tabs.create({ url: bookmark.url })
+    chrome.tabs.create({
+      url: bookmark.url,
+      windowId: sourceWindowId,
+    })
 
     window.close()
   }
@@ -145,6 +160,7 @@ function App() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const combinedLength = filteredTabs.length + filteredBookmarks.length
+
     const activeLength = isShowingClosedTabs
       ? closedTabs.length
       : combinedLength
@@ -211,27 +227,33 @@ function App() {
       case 'ArrowLeft':
       case '<':
         e.preventDefault()
+
         if (isTabSelected && filteredTabs[selectedIndex]) {
           closeTab(filteredTabs[selectedIndex])
         }
+
         break
 
       case 'w':
       case 'W':
         if (e.metaKey || e.ctrlKey) {
           e.preventDefault()
+
           if (isTabSelected && filteredTabs[selectedIndex]) {
             closeTab(filteredTabs[selectedIndex])
           }
         }
+
         break
 
       case 'ArrowRight':
       case '>':
         e.preventDefault()
+
         if (isTabSelected && filteredTabs[selectedIndex]) {
           togglePinTab(filteredTabs[selectedIndex])
         }
+
         break
 
       case 'Escape':
@@ -241,6 +263,7 @@ function App() {
         } else {
           window.close()
         }
+
         break
     }
   }
@@ -266,7 +289,7 @@ function App() {
 
     setTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
 
-    setfilteredTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
+    setFilteredTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
 
     setSelectedIndex((current) => Math.max(current - 1, 0))
     setIsMoveMode(false)
@@ -277,14 +300,18 @@ function App() {
 
   const moveTab = (direction: 'up' | 'down') => {
     const currentIndex = selectedIndex
+
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
 
-    if (targetIndex < 0 || targetIndex >= filteredTabs.length) return
+    if (targetIndex < 0 || targetIndex >= filteredTabs.length) {
+      return
+    }
 
     const currentTab = filteredTabs[currentIndex]
     const targetTab = filteredTabs[targetIndex]
 
     if (!currentTab.id || !targetTab.id) return
+
     if (currentTab.windowId !== targetTab.windowId) return
 
     let newPinned = currentTab.pinned
@@ -296,20 +323,31 @@ function App() {
     }
 
     if (newPinned !== currentTab.pinned) {
-      chrome.tabs.update(currentTab.id, { pinned: newPinned })
+      chrome.tabs.update(currentTab.id, {
+        pinned: newPinned,
+      })
     }
 
-    chrome.tabs.move(currentTab.id, { index: targetTab.index })
+    chrome.tabs.move(currentTab.id, {
+      index: targetTab.index,
+    })
 
     const applyMove = (prevTabs: chrome.tabs.Tab[]) => {
       const curPos = prevTabs.findIndex((t) => t.id === currentTab.id)
+
       const tgtPos = prevTabs.findIndex((t) => t.id === targetTab.id)
 
-      if (curPos === -1 || tgtPos === -1) return prevTabs
+      if (curPos === -1 || tgtPos === -1) {
+        return prevTabs
+      }
 
       const updated = [...prevTabs]
 
-      updated[curPos] = { ...prevTabs[tgtPos], index: prevTabs[curPos].index }
+      updated[curPos] = {
+        ...prevTabs[tgtPos],
+        index: prevTabs[curPos].index,
+      }
+
       updated[tgtPos] = {
         ...prevTabs[curPos],
         pinned: newPinned,
@@ -321,7 +359,7 @@ function App() {
 
     setTabs(applyMove)
 
-    setfilteredTabs((prevTabs) => {
+    setFilteredTabs((prevTabs) => {
       const updated = applyMove(prevTabs)
 
       setSelectedIndex(updated.findIndex((t) => t.id === currentTab.id))
@@ -346,7 +384,7 @@ function App() {
 
     setTabs(applyPin)
 
-    setfilteredTabs((prevTabs) => {
+    setFilteredTabs((prevTabs) => {
       const updated = applyPin(prevTabs)
 
       setSelectedIndex(updated.findIndex((t) => t.id === tab.id))
@@ -384,20 +422,22 @@ function App() {
           viewBox="0 0 20 20"
         >
           <path
-            d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9418 2.9419 7.7115 0 10.6533z"
+            d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9419 2.9419 7.7115 0 10.6533z"
             stroke="currentColor"
             fill="none"
-            fill-rule="evenodd"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          ></path>
+            fillRule="evenodd"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
+
         <input
           ref={inputRef}
-          placeholder="Search tab"
+          placeholder="Search tabs and bookmarks"
           onChange={(e) => filterTabs(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+
         <span>esc</span>
       </div>
 
@@ -406,7 +446,7 @@ function App() {
         filteredBookmarks.length === 0 &&
         closedTabs.length === 0 ? (
           <li className={s.tab_list_notfound}>
-            <span>No tabs found with that name</span>
+            <span>No tabs or bookmarks found</span>
           </li>
         ) : isShowingClosedTabs ? (
           closedTabs.map((session, index) => (
@@ -414,14 +454,18 @@ function App() {
               key={session.tab?.sessionId}
               onClick={() => restoreTab(session)}
               ref={index === selectedIndex ? selectedRef : null}
-              className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''}`}
+              className={`${s.tab_list_item} ${
+                index === selectedIndex ? s.tab_list_item_selected : ''
+              }`}
               style={{ opacity: 0.6 }}
             >
               <img src={session.tab?.favIconUrl} width={16} height={16} />
+
               <span className={s.tab_list_text}>
                 <p className={s.tab_list_title}>{session.tab?.title}</p>
+
                 <p className={s.tab_list_subtitle}>
-                  {getDomain(session.tab?.url)} · Cerrada
+                  {getDomain(session.tab?.url)} · Closed
                 </p>
               </span>
             </li>
@@ -433,21 +477,32 @@ function App() {
                 key={tab.id}
                 onClick={() => openTab(tab)}
                 ref={index === selectedIndex ? selectedRef : null}
-                className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''} ${index === selectedIndex && isMoveMode ? s.tab_list_item_moving : ''}`}
+                className={`${s.tab_list_item} ${
+                  index === selectedIndex ? s.tab_list_item_selected : ''
+                } ${
+                  index === selectedIndex && isMoveMode
+                    ? s.tab_list_item_moving
+                    : ''
+                }`}
               >
                 <img src={tab.favIconUrl} width={16} height={16} />
+
                 <span className={s.tab_list_text}>
                   <p className={s.tab_list_title}>{tab.title}</p>
+
                   <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
                 </span>
+
                 {isBookmarked(tab.url) && (
                   <span className={s.tab_list_bookmark_mark} title="Bookmarked">
                     ★
                   </span>
                 )}
+
                 {tab.pinned && <span className={s.tab_list_pinned}>pin</span>}
               </li>
             ))}
+
             {filteredBookmarks.map((bookmark, bookmarkIndex) => {
               const index = filteredTabs.length + bookmarkIndex
 
@@ -456,15 +511,19 @@ function App() {
                   key={bookmark.id}
                   onClick={() => openBookmark(bookmark)}
                   ref={index === selectedIndex ? selectedRef : null}
-                  className={`${s.tab_list_item} ${index === selectedIndex ? s.tab_list_item_selected : ''}`}
+                  className={`${s.tab_list_item} ${
+                    index === selectedIndex ? s.tab_list_item_selected : ''
+                  }`}
                 >
                   <span className={s.tab_list_bookmark_icon}>★</span>
+
                   <span className={s.tab_list_text}>
                     <p className={s.tab_list_title}>
                       {bookmark.title || bookmark.url}
                     </p>
+
                     <p className={s.tab_list_subtitle}>
-                      {getDomain(bookmark.url)} · Marked
+                      {getDomain(bookmark.url)} · Bookmark
                     </p>
                   </span>
                 </li>
@@ -473,20 +532,25 @@ function App() {
           </>
         )}
       </ul>
+
       <div className={s.search_instructions}>
         <div className={s.search_instructions_icons}>
           <p className={s.search_instructions_icon}>
-            <span>↑ ↓ navigate</span>{' '}
+            <span>↑ ↓ navigate</span>
           </p>
+
           <p className={s.search_instructions_icon}>
             <span>← close</span>
           </p>
+
           <p className={s.search_instructions_icon}>
             <span>→ pin</span>
           </p>
+
           <p className={s.search_instructions_icon}>
-            <span>⌃v {isMoveMode ? 'stop moving' : 'move'}</span>
+            <span>⌃m {isMoveMode ? 'stop moving' : 'move'}</span>
           </p>
+
           <p className={s.search_instructions_icon}>
             <span>↵ open</span>
           </p>
