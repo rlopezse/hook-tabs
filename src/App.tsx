@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import s from './App.module.css'
+import { t, type Lang } from './i18n'
 
 const flattenBookmarks = (
   nodes: chrome.bookmarks.BookmarkTreeNode[],
@@ -25,6 +26,7 @@ function App() {
 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isMoveMode, setIsMoveMode] = useState(false)
+  const [lang, setLang] = useState<Lang>('en')
 
   const windowIdParam = new URLSearchParams(window.location.search).get(
     'windowId',
@@ -63,6 +65,26 @@ function App() {
 
     inputRef.current?.focus()
   }, [sourceWindowId])
+
+  useEffect(() => {
+    chrome.storage.local.get('lang', (result) => {
+      if (result.lang === 'en' || result.lang === 'es') {
+        setLang(result.lang)
+      }
+    })
+  }, [])
+
+  const toggleLang = () => {
+    const nextLang = lang === 'en' ? 'es' : 'en'
+
+    setLang(nextLang)
+    chrome.storage.local.set({ lang: nextLang })
+  }
+
+  useEffect(() => {
+    document.title = t(lang, 'appTitle')
+    document.documentElement.lang = lang
+  }, [lang])
 
   const isBookmarked = (url?: string) => !!url && bookmarkedUrls.has(url)
 
@@ -433,7 +455,7 @@ function App() {
 
         <input
           ref={inputRef}
-          placeholder="Search tabs and bookmarks"
+          placeholder={t(lang, 'searchPlaceholder')}
           onChange={(e) => filterTabs(e.target.value)}
           onKeyDown={handleKeyDown}
         />
@@ -446,7 +468,7 @@ function App() {
         filteredBookmarks.length === 0 &&
         closedTabs.length === 0 ? (
           <li className={s.tab_list_notfound}>
-            <span>No tabs or bookmarks found</span>
+            <span>{t(lang, 'notFound')}</span>
           </li>
         ) : isShowingClosedTabs ? (
           closedTabs.map((session, index) => (
@@ -465,7 +487,7 @@ function App() {
                 <p className={s.tab_list_title}>{session.tab?.title}</p>
 
                 <p className={s.tab_list_subtitle}>
-                  {getDomain(session.tab?.url)} · Closed
+                  {getDomain(session.tab?.url)} · {t(lang, 'closed')}
                 </p>
               </span>
             </li>
@@ -494,12 +516,17 @@ function App() {
                 </span>
 
                 {isBookmarked(tab.url) && (
-                  <span className={s.tab_list_bookmark_mark} title="Bookmarked">
+                  <span
+                    className={s.tab_list_bookmark_mark}
+                    title={t(lang, 'bookmarked')}
+                  >
                     ★
                   </span>
                 )}
 
-                {tab.pinned && <span className={s.tab_list_pinned}>pin</span>}
+                {tab.pinned && (
+                  <span className={s.tab_list_pinned}>{t(lang, 'pinned')}</span>
+                )}
               </li>
             ))}
 
@@ -523,7 +550,7 @@ function App() {
                     </p>
 
                     <p className={s.tab_list_subtitle}>
-                      {getDomain(bookmark.url)} · Bookmark
+                      {getDomain(bookmark.url)} · {t(lang, 'bookmark')}
                     </p>
                   </span>
                 </li>
@@ -534,25 +561,36 @@ function App() {
       </ul>
 
       <div className={s.search_instructions}>
+        <button
+          type="button"
+          className={s.lang_toggle}
+          onClick={toggleLang}
+          title={lang === 'en' ? 'Cambiar a español' : 'Switch to English'}
+        >
+          {lang.toUpperCase()}
+        </button>
+
         <div className={s.search_instructions_icons}>
           <p className={s.search_instructions_icon}>
-            <span>↑ ↓ navigate</span>
+            <span>↑ ↓ {t(lang, 'navigate')}</span>
           </p>
 
           <p className={s.search_instructions_icon}>
-            <span>← close</span>
+            <span>← {t(lang, 'close')}</span>
           </p>
 
           <p className={s.search_instructions_icon}>
-            <span>→ pin</span>
+            <span>→ {t(lang, 'pin')}</span>
           </p>
 
           <p className={s.search_instructions_icon}>
-            <span>⌃m {isMoveMode ? 'stop moving' : 'move'}</span>
+            <span>
+              ⌃m {isMoveMode ? t(lang, 'stopMoving') : t(lang, 'move')}
+            </span>
           </p>
 
           <p className={s.search_instructions_icon}>
-            <span>↵ open</span>
+            <span>↵ {t(lang, 'open')}</span>
           </p>
         </div>
       </div>
