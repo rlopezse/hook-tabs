@@ -22,7 +22,7 @@
   "commands": {
     "open-hook-tabs": {
       "suggested_key": {
-        "default": "Ctrl+Shift+H"
+        "default": "Ctrl+B"
       },
       "description": "Open Hook Tabs"
     }
