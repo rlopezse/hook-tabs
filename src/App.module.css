@@ -10,6 +10,10 @@
   scroll-margin-bottom: 47.4px;
 }
 
+.tab_list_item:hover {
+  background-color: var(--gray-100);
+}
+
 .tab_list_pinned {
   border: 1px solid oklch(0.94 0.03 254.53);
   border-radius: 6px;
@@ -137,7 +141,23 @@
   border-top: 1px solid var(--gray-200);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+}
+
+.lang_toggle {
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  padding: 3px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-400);
+  background: var(--gray-100);
+  cursor: pointer;
+}
+
+.lang_toggle:hover {
+  color: var(--blue-700);
+  border-color: var(--blue-700);
 }
 
 .search_instructions_icons {
