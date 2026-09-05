@@ -12,6 +12,19 @@ Ahora también puedes buscar entre tus marcadores, directamente desde la misma i
 
 Por ahora decidí mantenerlo simple y directo. Hay varias cosas que me gustaría mejorar y agregar en el futuro, pero preferí partir con algo pequeño que resolviera el problema que tenía.
 
+### Funcionalidades
+
+- Búsqueda instantánea entre pestañas abiertas
+- Búsqueda de pestañas cerradas recientemente
+- Búsqueda de marcadores, desde la misma interfaz
+- Navegación 100% por teclado
+- Cerrar pestañas
+- Pinear / despinear pestañas
+- Reordenar pestañas
+- Abrir una pestaña o marcador directamente
+- Cambio de idioma (Inglés / Español)
+- Diseño minimalista: sin organizadores, sin funciones innecesarias
+
 ### Atajos
 
 - `↑ ↓` Navegar entre resultados
