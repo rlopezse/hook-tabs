@@ -30,7 +30,7 @@ Por ahora decidí mantenerlo simple y directo. Hay varias cosas que me gustaría
 - `↑ ↓` Navegar entre resultados
 - `←` Cerrar pestaña
 - `→` Pinear / despinear pestaña
-- `M` Mover pestaña
+- `Ctrl+M` Mover pestaña
 - `Enter` Abrir pestaña o marcador
 - `Esc` Cerrar Hook Tabs
 
