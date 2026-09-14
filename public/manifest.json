@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hook Tabs",
-  "version": "1.4.1",
+  "version": "1.4.3",
   "description": "Search, find, close and pin your Chrome tabs and bookmarks from one place.",
 
   "permissions": [
