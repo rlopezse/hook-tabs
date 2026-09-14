@@ -33,6 +33,8 @@ body {
     sans-serif;
   font-size: 12px; /* Tamaño promedio de los textos en la barra de herramientas de Chrome */
   -webkit-font-smoothing: antialiased; /* Suavizado de fuente idéntico al navegador */
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 #root {
