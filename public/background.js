@@ -34,6 +34,12 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (currentWindow.id === undefined) return;
 
   const hookWindows = await getHookWindows();
+
+  // The currently focused window is itself a Hook Tabs popup, not the
+  // browser window that spawned it (this happens because the popup grabs
+  // focus on open). It's already focused, so there's nothing to do.
+  if (Object.values(hookWindows).includes(currentWindow.id)) return;
+
   const existingHookWindowId = hookWindows[currentWindow.id];
 
   // Hook Tabs already exists for this window
