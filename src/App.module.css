@@ -3,7 +3,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--color-border);
   overflow: hidden;
   cursor: pointer;
   scroll-margin-top: 55px;
@@ -11,26 +11,26 @@
 }
 
 .tab_list_item:hover {
-  background-color: var(--gray-100);
+  background-color: var(--color-hover-bg);
 }
 
 .tab_list_pinned {
-  border: 1px solid oklch(0.94 0.03 254.53);
+  border: 1px solid var(--color-accent-border);
   border-radius: 6px;
   padding: 3px 4px;
   font-size: 12px;
-  color: var(--blue-700);
-  background: var(--blue-50);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
 }
 
 .tab_list_bookmark_mark {
-  border: 1px solid oklch(0.9 0.07 95);
+  border: 1px solid var(--color-warning-border);
   border-radius: 6px;
   padding: 3px 4px;
   font-size: 12px;
   line-height: 1;
-  color: oklch(0.55 0.15 95);
-  background: oklch(0.97 0.04 95);
+  color: var(--color-warning-text);
+  background: var(--color-warning-bg);
 }
 
 .tab_list_bookmark_icon {
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: oklch(0.55 0.15 95);
+  color: var(--color-warning-text);
 }
 
 .tab_list_item img {
@@ -53,12 +53,12 @@
 }
 
 .tab_list_item_selected {
-  background-color: var(--gray-50);
+  background-color: var(--color-selected-bg);
 }
 
 .tab_list_item_moving {
-  background-color: var(--blue-50);
-  box-shadow: inset 3px 0 0 var(--blue-700);
+  background-color: var(--color-accent-bg);
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 .tab_list_item:last-child {
@@ -77,39 +77,39 @@
   padding: 12px 16px;
   text-align: center;
   margin-top: 70px;
-  color: var(--gray-400);
+  color: var(--color-text-secondary);
   font-size: 16px;
 }
 
 .tab_list_title {
   font-size: 12px;
-  color: var(--gray-900);
+  color: var(--color-text-primary);
 }
 
 .tab_list_subtitle {
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--color-text-secondary);
 }
 
 .search {
   z-index: 1;
-  background-color: var(--white);
+  background-color: var(--color-bg);
   width: 100%;
   position: fixed;
   top: 0;
 }
 
 .search span {
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
   position: absolute;
   top: 50%;
   right: 16px;
   padding: 3px 4px;
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--color-text-secondary);
   top: calc(50% - 11px);
-  background: var(--gray-50);
+  background: var(--color-hover-bg);
 }
 
 .search input {
@@ -118,7 +118,9 @@
   font-size: 14px;
   font-weight: 400;
   padding: 0 58px 0 46px;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
 }
 
 .search input:focus {
@@ -126,38 +128,38 @@
 }
 
 .search input::placeholder {
-  color: var(--gray-400);
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 
 .search_instructions {
   z-index: 1;
-  background-color: var(--gray-50);
+  background-color: var(--color-bg-secondary);
   width: 100%;
   position: fixed;
   bottom: 0;
   left: 0;
   padding: 16px;
-  border-top: 1px solid var(--gray-200);
+  border-top: 1px solid var(--color-border-strong);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .lang_toggle {
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
   padding: 3px 4px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--gray-400);
-  background: var(--gray-100);
+  color: var(--color-text-secondary);
+  background: var(--color-hover-bg);
   cursor: pointer;
 }
 
 .lang_toggle:hover {
-  color: var(--blue-700);
-  border-color: var(--blue-700);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .search_instructions_icons {
@@ -169,13 +171,13 @@
 
 .search_instructions_title {
   font-size: 14px;
-  color: var(--gray-900);
+  color: var(--color-text-primary);
 }
 
 .search_instructions span {
-  border: 1px solid var(--gray-200);
-  color: var(--gray-400);
-  background: var(--gray-100);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  background: var(--color-hover-bg);
   border-radius: 6px;
   padding: 3px 4px;
   font-size: 12px;
@@ -183,5 +185,5 @@
 
 .search_instructions_icon {
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--color-text-secondary);
 }

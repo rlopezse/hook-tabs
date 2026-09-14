@@ -23,6 +23,7 @@ Por ahora decidí mantenerlo simple y directo. Hay varias cosas que me gustaría
 - Reordenar pestañas
 - Abrir una pestaña o marcador directamente
 - Cambio de idioma (Inglés / Español)
+- Modo oscuro / claro según la preferencia del sistema
 - Diseño minimalista: sin organizadores, sin funciones innecesarias
 
 ### Atajos
