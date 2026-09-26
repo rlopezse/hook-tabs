@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import s from './App.module.css'
 import { t, type Lang } from './i18n'
-
-const flattenBookmarks = (
-  nodes: chrome.bookmarks.BookmarkTreeNode[],
-): chrome.bookmarks.BookmarkTreeNode[] =>
-  nodes.flatMap((node) => [
-    ...(node.url ? [node] : []),
-    ...(node.children ? flattenBookmarks(node.children) : []),
-  ])
+import { flattenBookmarks } from './utils/flattenBookmarks'
+import { getDomain } from './utils/getDomain'
+import { isBookmarked } from './utils/isBookmarked'
+import { filterTabs } from './actions/filterTabs'
+import { restoreTab } from './actions/restoreTab'
+import { openBookmark } from './actions/openBookmark'
+import { openTab } from './actions/openTab'
+import { toggleLang } from './actions/toggleLang'
+import { handleKeyDown } from './handlers/handleKeyDown'
 
 function App() {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([])
@@ -74,88 +75,10 @@ function App() {
     })
   }, [])
 
-  const toggleLang = () => {
-    const nextLang = lang === 'en' ? 'es' : 'en'
-
-    setLang(nextLang)
-    chrome.storage.local.set({ lang: nextLang })
-  }
-
   useEffect(() => {
     document.title = t(lang, 'appTitle')
     document.documentElement.lang = lang
   }, [lang])
-
-  const isBookmarked = (url?: string) => !!url && bookmarkedUrls.has(url)
-
-  const filterTabs = (search: string) => {
-    const searchLower = search.toLowerCase()
-
-    const matchingTabs = tabs.filter((tab) => {
-      if (tab.url?.startsWith(chrome.runtime.getURL(''))) {
-        return false
-      }
-
-      return (
-        tab.title?.toLowerCase().includes(searchLower) ||
-        tab.url?.toLowerCase().includes(searchLower)
-      )
-    })
-
-    const openTabUrls = new Set(tabs.map((tab) => tab.url))
-
-    const matchingBookmarks = searchLower
-      ? bookmarks.filter(
-          (bookmark) =>
-            !openTabUrls.has(bookmark.url) &&
-            (bookmark.title?.toLowerCase().includes(searchLower) ||
-              bookmark.url?.toLowerCase().includes(searchLower)),
-        )
-      : []
-
-    setFilteredTabs(matchingTabs)
-    setFilteredBookmarks(matchingBookmarks)
-    setSelectedIndex(0)
-    setIsMoveMode(false)
-
-    if (
-      matchingTabs.length === 0 &&
-      matchingBookmarks.length === 0 &&
-      searchLower
-    ) {
-      chrome.sessions.getRecentlyClosed({ maxResults: 25 }, (sessions) => {
-        const matchingClosedTabs = sessions.filter(
-          (session) =>
-            session.tab &&
-            (session.tab.title?.toLowerCase().includes(searchLower) ||
-              session.tab.url?.toLowerCase().includes(searchLower)),
-        )
-
-        setClosedTabs(matchingClosedTabs)
-      })
-    } else {
-      setClosedTabs([])
-    }
-  }
-
-  const restoreTab = (session: chrome.sessions.Session) => {
-    if (!session.tab?.sessionId) return
-
-    chrome.sessions.restore(session.tab.sessionId)
-
-    window.close()
-  }
-
-  const openBookmark = (bookmark: chrome.bookmarks.BookmarkTreeNode) => {
-    if (!bookmark.url) return
-
-    chrome.tabs.create({
-      url: bookmark.url,
-      windowId: sourceWindowId,
-    })
-
-    window.close()
-  }
 
   useEffect(() => {
     const handleBlur = () => {
@@ -179,251 +102,6 @@ function App() {
       behavior: 'smooth',
     })
   }, [selectedIndex])
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const combinedLength = filteredTabs.length + filteredBookmarks.length
-
-    const activeLength = isShowingClosedTabs
-      ? closedTabs.length
-      : combinedLength
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-
-        if (isMoveMode && isTabSelected) {
-          moveTab('down')
-        } else if (activeLength > 0) {
-          setSelectedIndex((current) => (current + 1) % activeLength)
-        }
-
-        break
-
-      case 'ArrowUp':
-        e.preventDefault()
-
-        if (isMoveMode && isTabSelected) {
-          moveTab('up')
-        } else if (activeLength > 0) {
-          setSelectedIndex(
-            (current) => (current - 1 + activeLength) % activeLength,
-          )
-        }
-
-        break
-
-      case 'm':
-      case 'M':
-        if (e.ctrlKey && isTabSelected) {
-          e.preventDefault()
-
-          if (filteredTabs[selectedIndex]) {
-            setIsMoveMode((current) => !current)
-          }
-        }
-
-        break
-
-      case 'Enter':
-        e.preventDefault()
-
-        if (isShowingClosedTabs) {
-          if (closedTabs[selectedIndex]) {
-            restoreTab(closedTabs[selectedIndex])
-          }
-        } else if (isTabSelected) {
-          if (filteredTabs[selectedIndex]) {
-            openTab(filteredTabs[selectedIndex])
-          }
-        } else {
-          const bookmark =
-            filteredBookmarks[selectedIndex - filteredTabs.length]
-
-          if (bookmark) {
-            openBookmark(bookmark)
-          }
-        }
-
-        break
-
-      case 'ArrowLeft':
-      case '<':
-        e.preventDefault()
-
-        if (isTabSelected && filteredTabs[selectedIndex]) {
-          closeTab(filteredTabs[selectedIndex])
-        }
-
-        break
-
-      case 'w':
-      case 'W':
-        if (e.metaKey || e.ctrlKey) {
-          e.preventDefault()
-
-          if (isTabSelected && filteredTabs[selectedIndex]) {
-            closeTab(filteredTabs[selectedIndex])
-          }
-        }
-
-        break
-
-      case 'ArrowRight':
-      case '>':
-        e.preventDefault()
-
-        if (isTabSelected && filteredTabs[selectedIndex]) {
-          togglePinTab(filteredTabs[selectedIndex])
-        }
-
-        break
-
-      case 'Escape':
-        if (isMoveMode) {
-          e.preventDefault()
-          setIsMoveMode(false)
-        } else {
-          window.close()
-        }
-
-        break
-    }
-  }
-
-  const openTab = (tab: chrome.tabs.Tab) => {
-    if (!tab.id || !tab.windowId) return
-
-    chrome.tabs.update(tab.id, {
-      active: true,
-    })
-
-    chrome.windows.update(tab.windowId, {
-      focused: true,
-    })
-
-    window.close()
-  }
-
-  const closeTab = (tab: chrome.tabs.Tab) => {
-    if (!tab.id) return
-
-    chrome.tabs.remove(tab.id)
-
-    setTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
-
-    setFilteredTabs((prevTabs) => prevTabs.filter((t) => t.id !== tab.id))
-
-    setSelectedIndex((current) => Math.max(current - 1, 0))
-    setIsMoveMode(false)
-  }
-
-  const reorderByPinned = (tabs: chrome.tabs.Tab[]) =>
-    [...tabs].sort((a, b) => Number(b.pinned) - Number(a.pinned))
-
-  const moveTab = (direction: 'up' | 'down') => {
-    const currentIndex = selectedIndex
-
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-
-    if (targetIndex < 0 || targetIndex >= filteredTabs.length) {
-      return
-    }
-
-    const currentTab = filteredTabs[currentIndex]
-    const targetTab = filteredTabs[targetIndex]
-
-    if (!currentTab.id || !targetTab.id) return
-
-    if (currentTab.windowId !== targetTab.windowId) return
-
-    let newPinned = currentTab.pinned
-
-    if (direction === 'up' && !currentTab.pinned && targetTab.pinned) {
-      newPinned = true
-    } else if (direction === 'down' && currentTab.pinned && !targetTab.pinned) {
-      newPinned = false
-    }
-
-    if (newPinned !== currentTab.pinned) {
-      chrome.tabs.update(currentTab.id, {
-        pinned: newPinned,
-      })
-    }
-
-    chrome.tabs.move(currentTab.id, {
-      index: targetTab.index,
-    })
-
-    const applyMove = (prevTabs: chrome.tabs.Tab[]) => {
-      const curPos = prevTabs.findIndex((t) => t.id === currentTab.id)
-
-      const tgtPos = prevTabs.findIndex((t) => t.id === targetTab.id)
-
-      if (curPos === -1 || tgtPos === -1) {
-        return prevTabs
-      }
-
-      const updated = [...prevTabs]
-
-      updated[curPos] = {
-        ...prevTabs[tgtPos],
-        index: prevTabs[curPos].index,
-      }
-
-      updated[tgtPos] = {
-        ...prevTabs[curPos],
-        pinned: newPinned,
-        index: prevTabs[tgtPos].index,
-      }
-
-      return updated
-    }
-
-    setTabs(applyMove)
-
-    setFilteredTabs((prevTabs) => {
-      const updated = applyMove(prevTabs)
-
-      setSelectedIndex(updated.findIndex((t) => t.id === currentTab.id))
-
-      return updated
-    })
-  }
-
-  const togglePinTab = (tab: chrome.tabs.Tab) => {
-    if (!tab.id) return
-
-    const pinned = !tab.pinned
-
-    chrome.tabs.update(tab.id, {
-      pinned,
-    })
-
-    const applyPin = (prevTabs: chrome.tabs.Tab[]) =>
-      reorderByPinned(
-        prevTabs.map((t) => (t.id === tab.id ? { ...t, pinned } : t)),
-      )
-
-    setTabs(applyPin)
-
-    setFilteredTabs((prevTabs) => {
-      const updated = applyPin(prevTabs)
-
-      setSelectedIndex(updated.findIndex((t) => t.id === tab.id))
-
-      return updated
-    })
-  }
-
-  const getDomain = (url?: string) => {
-    if (!url) return ''
-
-    try {
-      return new URL(url).hostname
-    } catch {
-      return ''
-    }
-  }
 
   return (
     <>
@@ -456,8 +134,34 @@ function App() {
         <input
           ref={inputRef}
           placeholder={t(lang, 'searchPlaceholder')}
-          onChange={(e) => filterTabs(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e) =>
+            filterTabs({
+              search: e.target.value,
+              tabs,
+              bookmarks,
+              setFilteredTabs,
+              setFilteredBookmarks,
+              setSelectedIndex,
+              setIsMoveMode,
+              setClosedTabs,
+            })
+          }
+          onKeyDown={(e) =>
+            handleKeyDown(e, {
+              filteredTabs,
+              filteredBookmarks,
+              closedTabs,
+              isShowingClosedTabs,
+              isTabSelected,
+              isMoveMode,
+              selectedIndex,
+              sourceWindowId,
+              setSelectedIndex,
+              setIsMoveMode,
+              setTabs,
+              setFilteredTabs,
+            })
+          }
         />
 
         <span>esc</span>
@@ -515,7 +219,7 @@ function App() {
                   <p className={s.tab_list_subtitle}>{getDomain(tab.url)}</p>
                 </span>
 
-                {isBookmarked(tab.url) && (
+                {isBookmarked(tab.url, bookmarkedUrls) && (
                   <span
                     className={s.tab_list_bookmark_mark}
                     title={t(lang, 'bookmarked')}
@@ -536,7 +240,7 @@ function App() {
               return (
                 <li
                   key={bookmark.id}
-                  onClick={() => openBookmark(bookmark)}
+                  onClick={() => openBookmark(bookmark, sourceWindowId)}
                   ref={index === selectedIndex ? selectedRef : null}
                   className={`${s.tab_list_item} ${
                     index === selectedIndex ? s.tab_list_item_selected : ''
@@ -564,7 +268,7 @@ function App() {
         <button
           type="button"
           className={s.lang_toggle}
-          onClick={toggleLang}
+          onClick={() => toggleLang(lang, setLang)}
           title={lang === 'en' ? 'Cambiar a español' : 'Switch to English'}
         >
           {lang.toUpperCase()}
